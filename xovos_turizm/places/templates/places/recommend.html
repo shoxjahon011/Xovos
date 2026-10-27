@@ -1,0 +1,155 @@
+{% extends "places/base.html" %}
+{% block title %}Tavsiyalar{% endblock %}
+{% block content %}
+<main class="rec">
+  <div class="locbar">
+    <span id="loctext">📍 Joylashuv aniqlanmagan</span>
+    <button id="locbtn" type="button">Aniqlash</button>
+  </div>
+  <div class="chips" id="types"></div>
+  <div class="chips" id="prices"></div>
+  <div class="chips" id="sorts"></div>
+  <ul id="rlist" class="rlist"></ul>
+</main>
+
+{{ places|json_script:"places" }}
+<script>
+const places = JSON.parse(document.getElementById('places').textContent);
+const params = new URLSearchParams(location.search);
+
+let type = ['ovqat', 'must'].includes(params.get('tur')) ? params.get('tur') : 'all';
+let price = 0, sort = 'near', userPos = null;
+
+const TYPES = [['all', 'Hammasi'], ['ovqat', '🍵 Choyxona va ovqat'], ['must', "👀 Ko'rishi shart"]];
+const PRICES = [[0, 'Barcha narx'], [1, '💰 Arzon'], [2, "💰💰 O'rtacha"], [3, '💰💰💰 Qimmat']];
+const SORTS = [['near', '📍 Eng yaqin'], ['rating', '⭐ Reyting']];
+const PRICE_NAMES = ['', 'Arzon', "O'rtacha", 'Qimmat'];
+
+// Ovqatlanish joyi: narxi kiritilgan YOKI kategoriyasi choyxona/ovqat/restoran va h.k.
+const FOOD_RE = /choyxona|chayxona|ovqat|restoran|kafe|oshxona|osh\b|taom|fastfood|fast food|non|kabob|shashlik|qahva/i;
+const isFood = p => p.price > 0 || FOOD_RE.test(p.cat_name || '');
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s == null ? '' : s;
+  return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function dist(a, b, c, d) {
+  const R = 6371, r = Math.PI / 180;
+  const x = Math.sin((c - a) * r / 2) ** 2 +
+    Math.cos(a * r) * Math.cos(c * r) * Math.sin((d - b) * r / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(x));
+}
+
+function fmtDist(km) {
+  return km < 1 ? Math.round(km * 1000) + ' m' : km.toFixed(1) + ' km';
+}
+
+function chipRow(id, items, getCur, onPick) {
+  const el = document.getElementById(id);
+  return function draw() {
+    el.innerHTML = '';
+    items.forEach(([val, label]) => {
+      const b = document.createElement('button');
+      b.textContent = label;
+      if (getCur() === val) b.classList.add('on');
+      b.onclick = () => { onPick(val); redraw(); };
+      el.appendChild(b);
+    });
+  };
+}
+
+const rows = [
+  chipRow('types', TYPES, () => type, v => { type = v; }),
+  chipRow('prices', PRICES, () => price, v => { price = v; }),
+  chipRow('sorts', SORTS, () => sort, v => {
+    sort = v;
+    if (v === 'near' && !userPos) locate();
+  })
+];
+
+function redraw() {
+  rows.forEach(d => d());
+  document.getElementById('prices').hidden = (type === 'must');
+  renderList();
+}
+
+function renderList() {
+  let items = places.filter(p => {
+    if (type === 'ovqat' && !isFood(p)) return false;
+    if (type === 'must' && !p.must_see) return false;
+    if (type !== 'must' && price && p.price !== price) return false;
+    return true;
+  });
+  if (userPos) {
+    items.forEach(p => p.d = dist(userPos[0], userPos[1], p.lat, p.lng));
+  }
+  if (sort === 'near' && userPos) {
+    items.sort((a, b) => a.d - b.d);
+  } else {
+    items.sort((a, b) => (b.avg - a.avg) || (b.cnt - a.cnt) || a.name.localeCompare(b.name));
+  }
+
+  const ul = document.getElementById('rlist');
+  ul.innerHTML = '';
+  if (!items.length) {
+    ul.innerHTML = '<li class="empty">Bu bo\'limda hozircha joy yo\'q.</li>';
+    return;
+  }
+  items.forEach(p => {
+    const dot = p.open === true ? '' : p.open === false ? 'no' : 'na';
+    const rating = p.cnt ? `⭐ ${p.avg.toFixed(1)} (${p.cnt})` : '☆ baholanmagan';
+    const pr = p.price ? ` · ${'💰'.repeat(p.price)} ${PRICE_NAMES[p.price]}` : '';
+    const ds = (p.d !== undefined) ? ` · ${fmtDist(p.d)}` : '';
+    const thumb = p.photo
+      ? `<img src="${esc(p.photo)}" alt="" loading="lazy">`
+      : `<div class="ph" style="background:${esc(p.color)}">${esc(p.icon)}</div>`;
+    const li = document.createElement('li');
+    li.innerHTML = `<a href="${esc(p.url)}">${thumb}<div class="info">` +
+      `<b>${esc(p.name)}</b>` +
+      `<div class="meta">${rating}${pr}${ds}</div>` +
+      `<div class="st ${dot}">${esc(p.status)}</div>` +
+      (p.price_note ? `<div class="note">${esc(p.price_note)}</div>` : '') +
+      (p.must_see ? `<span class="badge">👀 Ko'rishi shart</span>` : '') +
+      `</div></a>`;
+    ul.appendChild(li);
+  });
+}
+
+// ---------- Joylashuv ----------
+const loctext = document.getElementById('loctext');
+const locbtn = document.getElementById('locbtn');
+
+function locate() {
+  if (!navigator.geolocation) {
+    loctext.textContent = "📍 Telefoningiz joylashuvni qo'llab-quvvatlamaydi";
+    return;
+  }
+  loctext.textContent = '⏳ Aniqlanmoqda...';
+  navigator.geolocation.getCurrentPosition(pos => {
+    userPos = [pos.coords.latitude, pos.coords.longitude];
+    let min = Infinity;
+    places.forEach(p => { min = Math.min(min, dist(userPos[0], userPos[1], p.lat, p.lng)); });
+    loctext.textContent = (min > 60)
+      ? "📍 Joylashuv aniqlandi, lekin siz Xovos tumanidan uzoqdasiz"
+      : '📍 Joylashuvingiz aniqlandi';
+    locbtn.hidden = true;
+    redraw();
+  }, err => {
+    loctext.textContent = err.code === 1
+      ? "📍 Ruxsat berilmadi. Brauzer sozlamalaridan ruxsat bering"
+      : "📍 Joylashuvni aniqlab bo'lmadi";
+  }, {enableHighAccuracy: true, timeout: 10000, maximumAge: 30000});
+}
+locbtn.onclick = locate;
+
+if (navigator.permissions && navigator.permissions.query) {
+  navigator.permissions.query({name: 'geolocation'})
+    .then(r => { if (r.state === 'granted') locate(); })
+    .catch(() => {});
+}
+
+redraw();
+</script>
+{% endblock %}

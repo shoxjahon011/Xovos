@@ -1,0 +1,53 @@
+/* ---------- Qidiruv takliflari ---------- */
+.bar{position:relative}
+.sugg{position:absolute;left:10px;right:10px;top:100%;z-index:1500;background:#fff;
+  border-radius:16px;box-shadow:0 8px 24px #0004;overflow:hidden;margin-top:-2px}
+.sugg button{display:flex;align-items:center;gap:12px;width:100%;padding:11px 14px;
+  border:0;border-bottom:1px solid #eee;background:#fff;text-align:left;font:inherit;cursor:pointer}
+.sugg button:last-child{border-bottom:0}
+.sugg button:active{background:#f1f8e9}
+.sugg b{display:block;font-size:15px}
+.sugg small{display:block;color:#666;font-size:12px}
+.sg-i{flex:0 0 38px;width:38px;height:38px;border-radius:50%;display:flex;
+  align-items:center;justify-content:center;font-size:19px}
+.sg-empty{padding:14px;color:#666;text-align:center}
+
+/* ---------- Rasm galereyasi ---------- */
+.gallery{position:relative;margin-bottom:10px}
+.gal-track{display:flex;gap:6px;overflow-x:auto;scroll-snap-type:x mandatory;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;border-radius:14px}
+.gal-track::-webkit-scrollbar{display:none}
+.gal-track img{flex:0 0 100%;width:100%;height:240px;object-fit:cover;
+  scroll-snap-align:center;background:#ddd}
+.gal-count{position:absolute;right:10px;bottom:10px;padding:3px 10px;border-radius:12px;
+  background:#000a;color:#fff;font-size:12px;font-weight:600}
+.gal-ph{height:170px;border-radius:14px;display:flex;align-items:center;
+  justify-content:center;font-size:70px;color:#fff}
+
+/* ---------- Amal tugmalari (Yo'nalish, Qo'ng'iroq, Bron...) ---------- */
+.acts{display:flex;gap:6px;overflow-x:auto;padding:4px 0 12px;scrollbar-width:none}
+.acts::-webkit-scrollbar{display:none}
+.act{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:5px;
+  min-width:78px;padding:6px 4px;border:0;background:none;color:var(--b);
+  text-decoration:none;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.act i{font-style:normal;width:48px;height:48px;border-radius:50%;background:#e3f2fd;
+  display:flex;align-items:center;justify-content:center;font-size:22px}
+.act.primary i{background:var(--b);color:#fff}
+.act.green{color:#2e7d32}
+.act.green i{background:#e8f5e9}
+.act:active i{transform:scale(.94)}
+
+/* ---------- Ma'lumot qatorlari ---------- */
+.row{display:flex;gap:12px;align-items:flex-start;padding:12px 2px;
+  border-top:1px solid #eee;font-size:15px}
+.row .ri{flex:0 0 26px;text-align:center;font-size:18px}
+.row a{color:var(--b);font-weight:600;word-break:break-all;text-decoration:none}
+details.row{display:block}
+details.row summary{display:flex;gap:12px;align-items:center;cursor:pointer;
+  list-style:none;font-weight:600}
+details.row summary::-webkit-details-marker{display:none}
+details.row summary::after{content:"▾";margin-left:auto;color:#888}
+details.row[open] summary::after{content:"▴"}
+details.row table{margin:10px 0 0}
+.desc{margin:6px 2px 10px;line-height:1.5}
+.sheet .gallery,.detail .gallery{margin-top:0}

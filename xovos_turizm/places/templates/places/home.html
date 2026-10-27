@@ -1,0 +1,41 @@
+{% extends "places/base.html" %}
+{% block content %}
+<main class="home">
+  <section class="hero">
+    <div class="hero-in">
+      <span class="hero-tag">🌾 Sirdaryo viloyati</span>
+      <h1>Xovos tumaniga xush kelibsiz</h1>
+      <p>Yo'llar, tarixiy joylar, choyxonalar va transport, hammasi bir joyda.</p>
+    </div>
+  </section>
+
+  <h2 class="h2">Nimani qidiryapsiz?</h2>
+  <div class="tiles">
+    <a class="tile big" href="/xarita/">
+      <span class="ti">🗺</span>
+      <b>Xovos Xaritasi</b>
+      <small>Xarita va barcha joylar</small>
+    </a>
+    <a class="tile t2" href="/tavsiya/">
+      <span class="ti">⭐</span>
+      <b>Tavsiyalar</b>
+      <small>Sizga eng yaqin joylar</small>
+    </a>
+    <a class="tile t3" href="/tavsiya/?tur=ovqat">
+      <span class="ti">🍵</span>
+      <b>Choyxonalar</b>
+      <small>Arzon, o'rtacha, qimmat</small>
+    </a>
+    <a class="tile t4" href="/tavsiya/?tur=must">
+      <span class="ti">👀</span>
+      <b>Ko'rishi shart</b>
+      <small>Albatta borib ko'ring</small>
+    </a>
+    <a class="tile t5" href="/transport/">
+      <span class="ti">🚌</span>
+      <b>Transport</b>
+      <small>Soatlar va bekatlar</small>
+    </a>
+  </div>
+</main>
+{% endblock %}

@@ -1,0 +1,61 @@
+{% load static %}<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{% block title %}Xovos Turizm{% endblock %}</title>
+<meta name="theme-color" content="#0e2a5e">
+<meta name="csrf" content="{{ csrf_token }}">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Xovos">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="{% static 'places/icons/icon-192.png' %}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="{% static 'places/style.css' %}">
+<link rel="stylesheet" href="{% static 'places/polish.css' %}?v=3">
+<script src="{% static 'places/rating.js' %}"></script>
+{% block head %}{% endblock %}
+</head>
+<body>
+<div id="pre"><i></i>Xovos tumani</div>
+
+<header class="top">
+  <a href="/">🗺 Xovos Turizm</a>
+  <button id="install" type="button" hidden>⬇ O'rnatish</button>
+</header>
+
+{% block content %}{% endblock %}
+
+<nav class="tabbar">
+  <a href="/" class="{% if request.resolver_match.url_name == 'home' %}on{% endif %}">🏠<span>Bosh</span></a>
+  <a href="/xarita/" class="{% if request.resolver_match.url_name == 'map' %}on{% endif %}">🗺<span>Xarita</span></a>
+  <a href="/tavsiya/" class="{% if request.resolver_match.url_name == 'recommend' %}on{% endif %}">⭐<span>Tavsiya</span></a>
+  <a href="/transport/" class="{% if request.resolver_match.url_name == 'transport' %}on{% endif %}">🚌<span>Transport</span></a>
+</nav>
+
+<script src="{% static 'places/polish.js' %}?v=2"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js');
+}
+let deferredPrompt = null;
+const ib = document.getElementById('install');
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  ib.hidden = false;
+});
+ib.onclick = async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  ib.hidden = true;
+};
+window.addEventListener('appinstalled', () => { ib.hidden = true; });
+</script>
+</body>
+</html>

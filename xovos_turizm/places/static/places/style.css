@@ -1,0 +1,201 @@
+:root{--g:#2e7d32;--b:#1976d2}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  background:#f5f5f5;color:#222;line-height:1.4;
+  padding-bottom:calc(66px + env(safe-area-inset-bottom))}
+body.noscroll{overflow:hidden}
+
+/* ---------- Sarlavha ---------- */
+.top{position:sticky;top:0;z-index:2000;background:var(--g);
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top));
+  padding-left:calc(14px + env(safe-area-inset-left));
+  padding-right:calc(14px + env(safe-area-inset-right))}
+.top a{color:#fff;text-decoration:none;font-weight:700;font-size:18px}
+.top button{border:0;border-radius:18px;background:#fff;color:var(--g);
+  font-weight:600;font-size:14px;padding:8px 12px;min-height:36px}
+
+/* ---------- Pastki menyu ---------- */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:2500;display:flex;
+  background:#fff;border-top:1px solid #ddd;padding-bottom:env(safe-area-inset-bottom)}
+.tabbar a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;min-height:62px;text-decoration:none;color:#666;font-size:22px}
+.tabbar a span{font-size:11px;font-weight:600}
+.tabbar a.on{color:var(--g)}
+
+/* ---------- Bosh sahifa (tugmalar) ---------- */
+.home{padding:12px;max-width:700px;margin:auto}
+.hero h1{font-size:22px;margin:6px 2px 2px}
+.hero p{margin:0 2px 14px;color:#555}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tile{display:flex;flex-direction:column;justify-content:flex-end;gap:2px;
+  min-height:130px;padding:14px;border-radius:18px;color:#fff;text-decoration:none;
+  box-shadow:0 2px 8px #0003}
+.tile:active{transform:scale(.98)}
+.tile .ti{font-size:38px;line-height:1;margin-bottom:6px}
+.tile b{font-size:17px}
+.tile small{opacity:.92;font-size:13px}
+.tile.big{grid-column:1 / -1;min-height:170px;background:linear-gradient(135deg,#2e7d32,#1b5e20)}
+.tile.t2{background:linear-gradient(135deg,#f9a825,#ef6c00)}
+.tile.t3{background:linear-gradient(135deg,#8d6e63,#5d4037)}
+.tile.t4{background:linear-gradient(135deg,#8e24aa,#5e35b1)}
+.tile.t5{background:linear-gradient(135deg,#1976d2,#0d47a1)}
+
+/* ---------- Qidiruv va kategoriyalar ---------- */
+.bar{padding:8px 10px 4px}
+.bar input{width:100%;height:46px;padding:0 14px;border:1px solid #ccc;
+  border-radius:12px;font-size:16px;background:#fff;-webkit-appearance:none;appearance:none}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:6px 10px 10px;
+  scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chips button{flex:0 0 auto;scroll-snap-align:start;white-space:nowrap;
+  min-height:40px;padding:0 14px;border:1px solid #ccc;border-radius:20px;
+  background:#fff;font-size:15px}
+.chips button.on{background:var(--g);color:#fff;border-color:var(--g)}
+
+/* ---------- Xarita ---------- */
+.mapwrap{position:relative;scroll-margin-top:60px}
+#map{height:60vh;height:60dvh;min-height:320px;width:100%;background:#dfe6e0}
+.fab{position:absolute;z-index:1000;border:0;color:#fff;
+  box-shadow:0 2px 8px #0005;font-size:15px}
+.fab-loc{right:12px;bottom:34px;width:52px;height:52px;border-radius:50%;
+  background:var(--b);font-size:24px;padding:0}
+.fab-list{left:12px;bottom:34px;height:46px;padding:0 16px;border-radius:23px;
+  background:#222;font-weight:600}
+.fab:active{transform:scale(.96)}
+.pin{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:20px;border:2px solid #fff;box-shadow:0 1px 5px #0007}
+.leaflet-control-layers{font-size:15px}
+.leaflet-control-layers-toggle{width:44px!important;height:44px!important}
+.leaflet-bar a{width:40px!important;height:40px!important;line-height:40px!important;font-size:20px!important}
+.leaflet-popup-content{margin:12px 14px;font-size:15px;line-height:1.5}
+.leaflet-popup-content a{display:inline-block;padding:6px 0;font-weight:600}
+.leaflet-container a.leaflet-popup-close-button{width:36px;height:36px;font-size:24px;line-height:36px}
+
+/* ---------- Ro'yxatlar ---------- */
+.sec{display:flex;align-items:center;justify-content:space-between;
+  margin:14px 12px 0;font-size:17px;scroll-margin-top:60px}
+.sec button{border:0;background:none;color:var(--b);font-size:14px;font-weight:600;
+  min-height:36px;padding:0 6px}
+.list{list-style:none;margin:0;padding:8px 10px}
+.list li{background:#fff;border-radius:12px;margin-bottom:8px;box-shadow:0 1px 2px #0001}
+.list a{display:block;min-height:58px;padding:12px 14px 12px 32px;
+  text-decoration:none;color:inherit;position:relative}
+.list small{display:block;color:#666;margin-top:2px}
+.dot{position:absolute;left:12px;top:19px;width:11px;height:11px;border-radius:50%}
+.dot.ok{background:#2e7d32}
+.dot.no{background:#c62828}
+.dot.na{background:#999}
+
+/* ---------- Joy sahifasi ---------- */
+.detail{max-width:700px;margin:auto;padding:14px 14px 24px}
+.detail .back{display:inline-block;padding:10px 0;color:var(--b);
+  text-decoration:none;font-weight:600}
+.detail h1{font-size:22px;margin:10px 0 4px}
+.status{font-weight:700;color:var(--g);margin:2px 0 10px}
+.detail table{width:100%;border-collapse:collapse;margin:10px 0;background:#fff;border-radius:12px;overflow:hidden}
+.detail td{padding:10px 12px;border-bottom:1px solid #eee}
+.detail a[href^="tel:"]{color:var(--b);font-weight:600}
+.btn{display:block;text-align:center;margin-top:14px;padding:15px 18px;
+  background:var(--b);color:#fff;border-radius:12px;text-decoration:none;
+  font-weight:600;font-size:16px}
+
+/* ---------- Media (rasm / video) ---------- */
+.media{margin:0 0 10px;background:#000;border-radius:12px;overflow:hidden}
+.media img{display:block;width:100%;max-height:45vh;object-fit:cover}
+.media video{display:block;width:100%;max-height:55vh;background:#000;object-fit:contain}
+.media.yt{position:relative;padding-top:56.25%}
+.media.yt iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+
+/* ---------- Joy oynasi ---------- */
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:3000;
+  opacity:0;pointer-events:none;transition:opacity .2s}
+.sheet-bg.open{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:3001;background:#fff;
+  border-radius:18px 18px 0 0;max-height:90vh;max-height:90dvh;overflow-y:auto;
+  -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  padding-bottom:env(safe-area-inset-bottom);
+  transform:translateY(105%);visibility:hidden;
+  transition:transform .25s ease,visibility .25s}
+.sheet.open{transform:none;visibility:visible}
+.sheet-head{position:sticky;top:0;z-index:2;height:44px;background:#fff;
+  display:flex;align-items:center;justify-content:center;border-radius:18px 18px 0 0}
+.sheet-head .grab{width:44px;height:5px;border-radius:3px;background:#ccc}
+.sheet-head button{position:absolute;right:8px;top:4px;width:40px;height:36px;
+  border:0;border-radius:50%;background:#eee;font-size:18px}
+.sheet-body{padding:0 12px 18px}
+.sheet .pad{padding:2px 4px}
+.sheet h2{font-size:21px;margin:6px 0 2px}
+.sheet .cat-name{margin:0;color:#666;font-size:14px}
+.sheet .status{font-weight:700;margin:6px 0 10px;color:#2e7d32}
+.sheet .status.no{color:#c62828}
+.sheet .status.na{color:#777}
+.sheet table{width:100%;border-collapse:collapse;margin:10px 0;background:#f7f7f7;border-radius:10px;overflow:hidden}
+.sheet td{padding:9px 12px;border-bottom:1px solid #eee}
+.sheet tr.today td{font-weight:700;background:#e8f5e9}
+.sheet a[href^="tel:"]{color:var(--b);font-weight:600}
+.sheet .btn2{background:#eee;color:#222}
+.loading{text-align:center;padding:30px 10px;color:#666}
+
+/* ---------- Tavsiyalar va transport ---------- */
+.rec{padding:6px 0 10px;max-width:700px;margin:auto}
+.locbar{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  margin:8px 10px;padding:10px 12px;background:#e3f2fd;border-radius:12px;font-size:14px}
+.locbar button{border:0;border-radius:18px;background:var(--b);color:#fff;font-weight:600;
+  padding:0 14px;min-height:38px;white-space:nowrap}
+.rec .chips{padding-top:2px}
+.rlist,.trlist{list-style:none;margin:0;padding:4px 10px}
+.rlist li{background:#fff;border-radius:14px;margin-bottom:10px;box-shadow:0 1px 3px #0002;overflow:hidden}
+.rlist a{display:flex;gap:12px;padding:10px;text-decoration:none;color:inherit}
+.rlist img,.rlist .ph{flex:0 0 84px;width:84px;height:84px;border-radius:12px;object-fit:cover;
+  display:flex;align-items:center;justify-content:center;font-size:34px}
+.rlist .info{flex:1;min-width:0}
+.rlist .meta{color:#555;font-size:14px;margin-top:3px}
+.rlist .st{font-size:13px;font-weight:700;margin-top:3px;color:#2e7d32}
+.rlist .st.no{color:#c62828}
+.rlist .st.na{color:#777}
+.rlist .note{font-size:13px;color:#666;margin-top:2px}
+.badge{display:inline-block;margin-top:4px;padding:2px 8px;border-radius:10px;
+  background:#fff3e0;color:#e65100;font-size:12px;font-weight:700}
+.empty{text-align:center;color:#666;padding:24px;list-style:none}
+
+.trlist li.tr{background:#fff;border-radius:14px;margin-bottom:10px;padding:12px;box-shadow:0 1px 3px #0002}
+.tr-head{font-size:16px}
+.tr-kind{display:inline-block;margin-right:6px}
+.tr-route{margin:2px 0 6px;color:#555}
+.tr-row{margin:4px 0;font-size:15px}
+.tr-next{margin:8px 0;padding:8px 10px;background:#e8f5e9;border-radius:10px;font-weight:700;color:#1b5e20}
+.tr-next.no{background:#fff3e0;color:#e65100}
+.times{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.time{padding:5px 10px;border-radius:14px;background:#eee;font-size:14px}
+.time.next{background:var(--g);color:#fff;font-weight:700}
+.tr-btns{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.tr-btns a{flex:1 1 140px;text-align:center;padding:12px;border-radius:10px;
+  background:var(--b);color:#fff;text-decoration:none;font-weight:600}
+.tr-btns a.call{background:#2e7d32}
+
+/* ---------- 5 yulduzli baho ---------- */
+.rate{margin:10px 0;padding:10px 12px;background:#fff8e1;border-radius:12px}
+.rate .sum{font-weight:700;font-size:17px;color:#e65100}
+.rate .ask{margin-top:6px;font-size:14px;color:#555}
+.rate .pick{display:flex;gap:2px;margin-top:2px}
+.rate .pick button{border:0;background:none;font-size:36px;line-height:1;padding:2px 4px;
+  color:#ccc;min-width:46px;min-height:46px}
+.rate .pick button.on{color:#f9a825}
+.rate .msg{min-height:18px;font-size:13px;color:#2e7d32}
+
+/* ---------- Planshet va kompyuter ---------- */
+@media (min-width:700px){
+  .sheet{left:50%;right:auto;bottom:auto;top:50%;width:560px;max-height:88vh;
+    border-radius:16px;transform:translate(-50%,-45%);opacity:0;
+    transition:transform .2s ease,opacity .2s,visibility .2s}
+  .sheet.open{transform:translate(-50%,-50%);opacity:1}
+  .sheet-head{border-radius:16px 16px 0 0}
+}
+@media (min-width:900px){
+  #map{height:70vh}
+  .list,.sec,.bar,.chips{max-width:900px;margin-left:auto;margin-right:auto}
+  .fab-list{display:none}
+}

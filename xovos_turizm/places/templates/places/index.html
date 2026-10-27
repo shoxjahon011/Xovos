@@ -1,0 +1,372 @@
+{% extends "places/base.html" %}
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+{% endblock %}
+{% block content %}
+<div class="bar">
+  <input id="q" type="search" enterkeyhint="search"
+         placeholder="Qidiruv: maktab, muzey, choyxona...">
+</div>
+<div class="chips" id="chips"></div>
+
+<div class="mapwrap" id="mapwrap">
+  <div id="map"></div>
+  <button id="near" class="fab fab-loc" type="button" aria-label="Yaqin atrofda">📍</button>
+  <button id="tolist" class="fab fab-list" type="button">☰ Ro'yxat</button>
+</div>
+
+<h3 class="sec" id="list-title">📍 Joylar
+  <button type="button" class="up">↑ Xarita</button>
+</h3>
+<ul id="list" class="list"></ul>
+
+<h3 class="sec">🛣 Yo'llar
+  <button type="button" class="up">↑ Xarita</button>
+</h3>
+<ul id="routes" class="list"></ul>
+
+<!-- Joy ma'lumoti oynasi -->
+<div id="sheet-bg" class="sheet-bg"></div>
+<div id="sheet" class="sheet" role="dialog" aria-modal="true">
+  <div class="sheet-head">
+    <span class="grab"></span>
+    <button id="sheet-x" type="button" aria-label="Yopish">✕</button>
+  </div>
+  <div id="sheet-body" class="sheet-body"></div>
+</div>
+
+{{ categories|json_script:"cats" }}
+{{ places|json_script:"places" }}
+{{ routes|json_script:"routesdata" }}
+{{ boundary|json_script:"boundary" }}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const cats = JSON.parse(document.getElementById('cats').textContent);
+const places = JSON.parse(document.getElementById('places').textContent);
+const routes = JSON.parse(document.getElementById('routesdata').textContent);
+const boundary = JSON.parse(document.getElementById('boundary').textContent);
+
+const CENTER = [40.20, 68.77];
+let BOUNDS = [[40.00, 68.50], [40.40, 69.05]];
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s == null ? '' : s;
+  return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// ---------- Qatlamlar ----------
+const sputnik = L.tileLayer(
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    maxNativeZoom: 17, maxZoom: 19,
+    attribution: 'Tiles &copy; Esri, Maxar, Earthstar Geographics'
+  });
+const labels = L.tileLayer(
+  'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+    maxNativeZoom: 17, maxZoom: 19
+  });
+const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19, attribution: '&copy; OpenStreetMap'
+});
+
+const map = L.map('map', {
+  layers: [sputnik, labels],
+  maxBounds: BOUNDS,
+  maxBoundsViscosity: 1.0,
+  minZoom: 9,
+  tap: true
+}).setView(CENTER, 11);
+
+L.control.layers(
+  {'🛰 Sputnik': sputnik, '🗺 Xarita': osm},
+  {'Nomlar': labels},
+  {collapsed: true}
+).addTo(map);
+
+// ---------- Tuman chegarasi: tashqarisi yopiladi ----------
+let ring = null;
+
+function inPolygon(lat, lng, poly) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const yi = poly[i][0], xi = poly[i][1], yj = poly[j][0], xj = poly[j][1];
+    if (((yi > lat) !== (yj > lat)) &&
+        (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi)) inside = !inside;
+  }
+  return inside;
+}
+
+if (boundary && boundary.length >= 3) {
+  ring = boundary;
+  const WORLD = [[-85, -360], [-85, 360], [85, 360], [85, -360]];
+  L.polygon([WORLD, ring], {
+    stroke: false, fillColor: '#f5f5f5', fillOpacity: 1, interactive: false
+  }).addTo(map);
+  L.polygon(ring, {
+    color: '#fff', weight: 3, fill: false, interactive: false
+  }).addTo(map);
+
+  const b = L.latLngBounds(ring);
+  BOUNDS = [[b.getSouth(), b.getWest()], [b.getNorth(), b.getEast()]];
+  map.setMaxBounds(b.pad(0.03));
+  map.fitBounds(b);
+  map.setMinZoom(map.getBoundsZoom(b) - 0.5);
+}
+
+window.addEventListener('resize', () => map.invalidateSize());
+window.addEventListener('orientationchange', () => setTimeout(() => map.invalidateSize(), 300));
+
+// ---------- Joy oynasi ----------
+const sheet = document.getElementById('sheet');
+const sheetBg = document.getElementById('sheet-bg');
+const sheetBody = document.getElementById('sheet-body');
+let sheetOpen = false, openToken = 0;
+
+function showSheet() {
+  sheet.classList.add('open');
+  sheetBg.classList.add('open');
+  document.body.classList.add('noscroll');
+  if (!sheetOpen) {
+    history.pushState({sheet: 1}, '');
+    sheetOpen = true;
+  }
+}
+
+function hideSheet(fromPop) {
+  sheet.classList.remove('open');
+  sheetBg.classList.remove('open');
+  document.body.classList.remove('noscroll');
+  sheetBody.innerHTML = '';          // video/audio to'xtaydi
+  openToken++;
+  if (sheetOpen) {
+    sheetOpen = false;
+    if (!fromPop) history.back();
+  }
+}
+
+window.addEventListener('popstate', () => { if (sheetOpen) hideSheet(true); });
+sheetBg.onclick = () => hideSheet(false);
+document.getElementById('sheet-x').onclick = () => hideSheet(false);
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && sheetOpen) hideSheet(false);
+});
+
+function placeHtml(p) {
+  let media = '';
+  if (p.photo) {
+    media += `<div class="media"><img src="${esc(p.photo)}" alt="${esc(p.name)}"></div>`;
+  }
+  if (p.video) {
+    media += `<div class="media"><video controls playsinline preload="metadata" src="${esc(p.video)}"></video></div>`;
+  }
+  if (p.youtube) {
+    media += `<div class="media yt"><iframe src="${esc(p.youtube)}" loading="lazy" allowfullscreen ` +
+             `allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"></iframe></div>`;
+  } else if (p.video_link) {
+    media += `<p class="pad"><a href="${esc(p.video_link)}" target="_blank" rel="noopener">▶ Videoni ko'rish</a></p>`;
+  }
+
+  let hours = '';
+  if (p.always_open) {
+    hours = '<p>🕒 Doim ochiq (24/7)</p>';
+  } else if (p.hours && p.hours.length) {
+    hours = '<table>' + p.hours.map(h =>
+      `<tr${h.today ? ' class="today"' : ''}><td>${esc(h.day)}</td><td>${esc(h.time)}</td></tr>`
+    ).join('') + '</table>';
+  }
+
+  const dot = p.open === true ? 'ok' : p.open === false ? 'no' : 'na';
+  const dir = `https://yandex.uz/maps/?rtext=~${p.lat},${p.lng}&rtt=auto`;
+
+  return media +
+    `<div class="pad">` +
+    `<h2>${esc(p.icon)} ${esc(p.name)}</h2>` +
+    `<p class="cat-name">${esc(p.category)}</p>` +
+    `<p class="status ${dot}">${esc(p.status)}</p>` +
+    (p.description ? `<p>${esc(p.description).replace(/\n/g, '<br>')}</p>` : '') +
+    (p.address ? `<p>📍 ${esc(p.address)}</p>` : '') +
+    (p.phone ? `<p>📞 <a href="tel:${esc(p.phone)}">${esc(p.phone)}</a></p>` : '') +
+    hours +
+    `<a class="btn" href="${dir}" target="_blank" rel="noopener">🧭 Yo'nalish olish</a>` +
+    `<a class="btn btn2" href="${esc(p.url)}">Alohida sahifada ochish</a>` +
+    `</div>`;
+}
+
+async function openPlace(id, fallbackUrl) {
+  const token = ++openToken;
+  sheetBody.innerHTML = '<p class="loading">Yuklanmoqda...</p>';
+  sheet.scrollTop = 0;
+  showSheet();
+  try {
+    const r = await fetch(`/api/joy/${id}/`);
+    if (!r.ok) throw new Error('http ' + r.status);
+    const p = await r.json();
+    if (token !== openToken) return;     // boshqa joy bosilgan yoki oyna yopilgan
+    sheetBody.innerHTML = placeHtml(p);
+  } catch (e) {
+    if (token !== openToken) return;
+    sheetBody.innerHTML =
+      `<p class="loading">Yuklab bo'lmadi. <a href="${esc(fallbackUrl)}">Sahifani ochish</a></p>`;
+  }
+}
+
+// ---------- Joylar va yo'llar ----------
+let activeCat = null, query = '', userPos = null, showRoutes = true, userMarker = null;
+const markLayer = L.layerGroup().addTo(map);
+const lineLayer = L.layerGroup().addTo(map);
+
+function inside(lat, lng) {
+  if (ring) return inPolygon(lat, lng, ring);
+  return lat >= BOUNDS[0][0] && lat <= BOUNDS[1][0] &&
+         lng >= BOUNDS[0][1] && lng <= BOUNDS[1][1];
+}
+
+function dist(a, b, c, d) {
+  const R = 6371, r = Math.PI / 180;
+  const x = Math.sin((c - a) * r / 2) ** 2 +
+    Math.cos(a * r) * Math.cos(c * r) * Math.sin((d - b) * r / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(x));
+}
+
+function render() {
+  markLayer.clearLayers();
+  let items = places.filter(p =>
+    (!activeCat || p.category === activeCat) &&
+    p.name.toLowerCase().includes(query));
+  if (userPos) {
+    items.forEach(p => p.d = dist(userPos[0], userPos[1], p.lat, p.lng));
+    items.sort((a, b) => a.d - b.d);
+  }
+  const list = document.getElementById('list');
+  list.innerHTML = '';
+  if (!items.length) {
+    list.innerHTML = '<li><a>Hech narsa topilmadi</a></li>';
+  }
+  items.forEach(p => {
+    const icon = L.divIcon({
+      className: '', iconSize: [38, 38], iconAnchor: [19, 19],
+      html: `<div class="pin" style="background:${esc(p.color)}">${esc(p.icon)}</div>`
+    });
+    L.marker([p.lat, p.lng], {icon, title: p.name}).addTo(markLayer)
+      .on('click', () => openPlace(p.id, p.url));
+
+    const li = document.createElement('li');
+    const dot = p.open === true ? 'ok' : p.open === false ? 'no' : 'na';
+    li.innerHTML = `<a href="${esc(p.url)}"><span class="dot ${dot}"></span>` +
+      `<b>${esc(p.icon)} ${esc(p.name)}</b><small>${esc(p.status)}` +
+      `${p.d !== undefined ? ' · ' + p.d.toFixed(1) + ' km' : ''}</small></a>`;
+    li.querySelector('a').onclick = e => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+      e.preventDefault();
+      openPlace(p.id, p.url);
+    };
+    list.appendChild(li);
+  });
+}
+
+function scrollToMap() {
+  document.getElementById('mapwrap').scrollIntoView({behavior: 'smooth', block: 'start'});
+}
+
+function drawRoutes() {
+  const ul = document.getElementById('routes');
+  ul.innerHTML = '';
+  if (!routes.length) {
+    ul.innerHTML = '<li><a>Hozircha yo\'llar kiritilmagan</a></li>';
+  }
+  routes.forEach(r => {
+    L.polyline(r.points, {color: '#fff', weight: 9, opacity: 0.9}).addTo(lineLayer);
+    const line = L.polyline(r.points, {
+      color: r.color, weight: 6, opacity: 1
+    }).addTo(lineLayer);
+    line.bindPopup(
+      `<b>${esc(r.name)}</b><br>` +
+      (r.destination ? `<b>Yo'nalish:</b> ${esc(r.destination)}<br>` : '') +
+      esc(r.description).replace(/\n/g, '<br>'));
+
+    const li = document.createElement('li');
+    li.innerHTML = `<a href="#map"><span class="dot" style="background:${esc(r.color)}"></span>` +
+      `<b>${esc(r.name)}</b><small>${esc(r.destination)}</small></a>`;
+    li.querySelector('a').onclick = e => {
+      e.preventDefault();
+      scrollToMap();
+      setTimeout(() => {
+        map.invalidateSize();
+        map.fitBounds(line.getBounds(), {padding: [30, 30]});
+        line.openPopup(r.points[Math.floor(r.points.length / 2)]);
+      }, 350);
+    };
+    ul.appendChild(li);
+  });
+}
+
+// ---------- Kategoriya tugmalari ----------
+const chips = document.getElementById('chips');
+function chip(label, id) {
+  const b = document.createElement('button');
+  b.textContent = label;
+  b.classList.add('cat');
+  b.onclick = () => {
+    activeCat = id;
+    chips.querySelectorAll('.cat').forEach(c => c.classList.remove('on'));
+    b.classList.add('on');
+    render();
+  };
+  if (id === null) b.classList.add('on');
+  chips.appendChild(b);
+}
+chip('Hammasi', null);
+cats.forEach(c => chip(`${c.icon} ${c.name}`, c.id));
+
+const rb = document.createElement('button');
+rb.textContent = "🛣 Yo'llar";
+rb.classList.add('on');
+rb.onclick = () => {
+  showRoutes = !showRoutes;
+  showRoutes ? lineLayer.addTo(map) : map.removeLayer(lineLayer);
+  rb.classList.toggle('on');
+};
+chips.appendChild(rb);
+
+document.getElementById('q').oninput = e => {
+  query = e.target.value.toLowerCase();
+  render();
+};
+
+document.getElementById('tolist').onclick = () => {
+  document.getElementById('list-title').scrollIntoView({behavior: 'smooth', block: 'start'});
+};
+document.querySelectorAll('.up').forEach(b => b.onclick = scrollToMap);
+
+const nearBtn = document.getElementById('near');
+nearBtn.onclick = () => {
+  if (!navigator.geolocation) {
+    alert("Telefoningiz joylashuvni qo'llab-quvvatlamaydi");
+    return;
+  }
+  nearBtn.textContent = '⏳';
+  navigator.geolocation.getCurrentPosition(pos => {
+    nearBtn.textContent = '📍';
+    userPos = [pos.coords.latitude, pos.coords.longitude];
+    if (userMarker) map.removeLayer(userMarker);
+    if (inside(userPos[0], userPos[1])) {
+      map.setView(userPos, 15);
+      userMarker = L.circleMarker(userPos, {
+        radius: 9, color: '#fff', weight: 3, fillColor: '#1976d2', fillOpacity: 1
+      }).addTo(map);
+    } else {
+      alert("Siz Xovos tumanidan tashqaridasiz. Joylar masofa bo'yicha saralandi.");
+    }
+    render();
+  }, err => {
+    nearBtn.textContent = '📍';
+    alert(err.code === 1
+      ? "Joylashuvga ruxsat berilmadi. Brauzer sozlamalaridan ruxsat bering."
+      : "Joylashuvni aniqlab bo'lmadi.");
+  }, {enableHighAccuracy: true, timeout: 10000, maximumAge: 30000});
+};
+
+render();
+drawRoutes();
+</script>
+{% endblock %}

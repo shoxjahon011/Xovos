@@ -1,0 +1,187 @@
+{% extends "places/base.html" %}
+{% load l10n %}
+{% block title %}{{ place.name }}{% endblock %}
+{% block content %}
+<main class="detail">
+  <a class="back" href="/">← ortga qaytish</a>
+
+  {% if photos %}
+  <div class="gallery">
+    <div class="gal-track">
+      {% for u in photos %}<img src="{{ u }}" alt="{{ place.name }}" loading="lazy">{% endfor %}
+    </div>
+    {% if photos|length > 1 %}
+    <span class="gal-count" id="galcount">1 / {{ photos|length }}</span>
+    <button type="button" class="gal-nav gal-prev" id="galprev" aria-label="Oldingi rasm">&#8249;</button>
+    <button type="button" class="gal-nav gal-next" id="galnext" aria-label="Keyingi rasm">&#8250;</button>
+    {% endif %}
+  </div>
+  {% else %}
+  <div class="gallery"><div class="gal-ph" style="background:{{ place.category.color }}">{{ place.category.icon }}</div></div>
+  {% endif %}
+
+  <h1>{{ place.category.icon }} {{ place.name }}</h1>
+  <p class="status">{{ place.status_text }}{% if place.must_see %} · 👀 Ko'rishi shart{% endif %}</p>
+
+  <div class="acts">
+    {% if phone_tel %}<a class="act" href="tel:{{ phone_tel }}"><i>📞</i>Qo'ng'iroq</a>{% endif %}
+    {% if booking_tel %}<a class="act green" href="tel:{{ booking_tel }}"><i>📅</i>Bron qilish</a>{% endif %}
+    {% if telegram_url %}<a class="act" href="{{ telegram_url }}" target="_blank" rel="noopener"><i>✈️</i>Telegram</a>{% endif %}
+    {% if place.website %}<a class="act" href="{{ place.website }}" target="_blank" rel="noopener"><i>🌐</i>Sayt</a>{% endif %}
+    <button class="act primary" type="button" id="savebtn"><i>⭐</i><span>Saqlash</span></button>
+    <button class="act green" type="button" id="addphoto"><i>📷</i><span>Rasm qo'shish</span></button>
+    <input type="file" id="photoinp" accept="image/*" hidden>
+  </div>
+
+  <div class="rate" id="rate"></div>
+
+  {% if place.description %}<p class="desc">{{ place.description|linebreaksbr }}</p>{% endif %}
+  {% if place.address %}<div class="row"><span class="ri">📍</span><div>{{ place.address }}</div></div>{% endif %}
+  {% if place.phone %}<div class="row"><span class="ri">📞</span><a href="tel:{{ phone_tel }}">{{ place.phone }}</a></div>{% endif %}
+  {% if place.price_level %}
+  <div class="row"><span class="ri">💰</span><div>{{ place.get_price_level_display }}{% if place.price_note %} — {{ place.price_note }}{% endif %}</div></div>
+  {% endif %}
+
+  {% if place.always_open %}
+  <div class="row"><span class="ri">🕒</span><div>Doim ochiq (24/7)</div></div>
+  {% elif hours %}
+  <details class="row hours" open>
+    <summary><span class="ri">🕒</span><span>{{ place.status_text }}</span></summary>
+    <table>
+      {% for h in hours %}
+      <tr data-wd="{{ h.weekday }}">
+        <td>{{ h.get_weekday_display }}</td>
+        <td>{% if h.open_time and h.close_time %}{{ h.open_time|time:"H:i" }} – {{ h.close_time|time:"H:i" }}{% else %}Dam olish{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </details>
+  {% endif %}
+
+  {% if place.video %}
+  <div class="media"><video controls playsinline preload="metadata" src="{{ place.video.url }}"></video></div>
+  {% endif %}
+  {% if youtube %}
+  <div class="media yt">
+    <iframe src="{{ youtube }}" loading="lazy" allowfullscreen
+      allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"></iframe>
+  </div>
+  {% elif place.video_url %}
+  <div class="row"><span class="ri">▶</span><a href="{{ place.video_url }}" target="_blank" rel="noopener">Videoni ko'rish</a></div>
+  {% endif %}
+</main>
+
+<script>
+// Galereya: < > tugmalari va avtomatik aylanish
+(function () {
+  const g = document.querySelector('.gallery'), t = g && g.querySelector('.gal-track');
+  if (!t || t.children.length < 2) return;
+  const n = t.children.length;
+  let timer = null;
+  const go = (d) => {
+    const w = t.clientWidth;
+    const i = (Math.round(t.scrollLeft / w) + d + n) % n;
+    t.scrollTo({left: i * w, behavior: 'smooth'});
+  };
+  const stop = () => { clearInterval(timer); timer = null; };
+  const start = () => { stop(); timer = setInterval(() => go(1), 2000); };
+  document.getElementById('galprev').onclick = () => { go(-1); start(); };
+  document.getElementById('galnext').onclick = () => { go(1); start(); };
+  g.addEventListener('touchstart', stop, {passive: true});
+  g.addEventListener('touchend', () => setTimeout(start, 2500), {passive: true});
+  document.addEventListener('visibilitychange', () => document.hidden ? stop() : start());
+  start();
+})();
+</script>
+{{ rating|json_script:"rating" }}
+<script>
+  const r = JSON.parse(document.getElementById('rating').textContent);
+  initRating(document.getElementById('rate'), {{ place.id }}, r.avg, r.cnt);
+
+
+  const tr = document.querySelector('.gal-track');
+  const ct = document.getElementById('galcount');
+  if (tr && ct) {
+    tr.addEventListener('scroll', () => {
+      const i = Math.round(tr.scrollLeft / tr.clientWidth);
+      ct.textContent = (i + 1) + ' / ' + tr.querySelectorAll('img').length;
+    });
+  }
+
+  // Bugungi kunni ajratib ko'rsatish
+  (function () {
+    const wd = (new Date().getDay() + 6) % 7;
+    const tr = document.querySelector('.hours tr[data-wd="' + wd + '"]');
+    if (tr) tr.classList.add('today');
+  })();
+
+  const PID = {{ place.id }};
+  const toast = (t) => {
+    let el = document.getElementById('toast');
+    if (!el) { el = document.createElement('div'); el.id = 'toast'; document.body.appendChild(el); }
+    el.textContent = t; el.classList.add('show');
+    clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), 3200);
+  };
+
+  // ---- Saqlash (shu qurilmada saqlanadi)
+  const sb = document.getElementById('savebtn');
+  const getSaved = () => { try { return JSON.parse(localStorage.getItem('xovos_saved') || '[]'); } catch (e) { return []; } };
+  const paint = () => {
+    const on = getSaved().includes(PID);
+    sb.classList.toggle('saved', on);
+    sb.querySelector('i').textContent = on ? '★' : '⭐';
+    sb.querySelector('span').textContent = on ? 'Saqlangan' : 'Saqlash';
+  };
+  sb.onclick = () => {
+    let s = getSaved();
+    s = s.includes(PID) ? s.filter(x => x !== PID) : s.concat(PID);
+    try { localStorage.setItem('xovos_saved', JSON.stringify(s)); } catch (e) {}
+    paint();
+    toast(s.includes(PID) ? 'Joy saqlandi' : 'Saqlanganlardan olib tashlandi');
+  };
+  paint();
+
+  // ---- Rasm qo'shish (yuklashdan oldin kichraytiriladi)
+  const cid = () => {
+    try {
+      let c = localStorage.getItem('xovos_cid');
+      if (!c) { c = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2)); localStorage.setItem('xovos_cid', c); }
+      return c;
+    } catch (e) { return 'anon-' + Date.now(); }
+  };
+  const shrink = (file) => new Promise((res) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const k = Math.min(1, 1600 / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      c.toBlob(b => res(b || file), 'image/jpeg', 0.82);
+    };
+    img.onerror = () => res(file);
+    img.src = url;
+  });
+  const ab = document.getElementById('addphoto'), inp = document.getElementById('photoinp');
+  ab.onclick = () => inp.click();
+  inp.onchange = async () => {
+    const f = inp.files[0]; if (!f) return;
+    const lab = ab.querySelector('span'), old = lab.textContent;
+    ab.disabled = true; lab.textContent = 'Yuklanmoqda...';
+    try {
+      const blob = await shrink(f);
+      const fd = new FormData();
+      fd.append('image', blob, 'photo.jpg');
+      fd.append('client_id', cid());
+      const r = await fetch(`/api/joy/${PID}/rasm/`, {
+        method: 'POST', body: fd,
+        headers: {'X-CSRFToken': document.querySelector('meta[name=csrf]').content}
+      });
+      const j = await r.json().catch(() => ({}));
+      toast(r.ok ? "Rasm qo'shildi!" : (j.error || "Yuklab bo'lmadi"));
+      if (r.ok) { setTimeout(() => location.reload(), 900); return; }
+    } catch (e) { toast("Internet bilan muammo. Qayta urinib ko'ring"); }
+    ab.disabled = false; lab.textContent = old; inp.value = '';
+  };
+</script>
+{% endblock %}
